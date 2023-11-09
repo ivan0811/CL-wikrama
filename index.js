@@ -6,6 +6,7 @@ const dbConfig = require('./config/database')
 const pool = mysql.createPool(dbConfig)
 const authRouter = require('./routes/auth')
 const authenticateJWT = require('./middleware/auth')
+const cors = require('cors')
 
 pool.on('error', (err) => {
     console.log(err)
@@ -14,6 +15,7 @@ pool.on('error', (err) => {
 const app = express()
 const PORT = 3000
 
+app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({
     extended: true
@@ -35,14 +37,6 @@ app.get('/contohparam', (req, res) => {
 app.get('/', (req, res) => {
     res.write('Hello world')
     res.end()
-
-    koneksi.query('select * from books', (err, result) => {
-        if(err){
-            console.log('error')
-        }else{
-            
-        }
-    })
 })
 
 app.listen(PORT, () => {
