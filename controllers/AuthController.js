@@ -18,57 +18,57 @@ const register = (req, res) => {
         email: req.body.email,
         username: req.body.username,
         password: req.body.password
-    }
-
-    pool.getConnection((err, connection) => {
-        if(err) throw err
-        connection.query(`SELECT * FROM users where email='${data.email}' OR username='${data.username}'`, (err, results) => {
-            if(err) throw err
-
-            if(results.length > 0){
-                res.status(403).json({
-                    message: 'Email/Username sudah digunakan'
-                })   
-                
-                return
-            }
-        })        
-    })
-        
-
-    if(data.email == null || data.username == null || data.password == null) {
+    }        
+    
+    if(data.email == null || data.username == null || 
+        data.password == null){
         responseFailValidate(res, 'Email/Username/Password wajib diisi')
     }else{
         const query = 'INSERT INTO users SET ?'
 
-        pool.getConnection((err, connection) => {
-            if(err) throw err
+        const query2 = `SELECT * FROM users WHERE email='${data.email}' OR username='${data.username}'`        
 
-            connection.query(query, [data], (err, results) => {
-                if(err) throw err
-
-                if(results.affectedRows >= 1){
-                    const token = jwt.sign({
-                        email: data.email,
-                        username: data.username
-                    }, accessTokenSecret)
-
-                    responseAuthSuccess(res, token, 'Register successfully', {
-                        email: data.email,
-                        username: data.username
+            pool.getConnection(async (err, connection) => {
+                if(err) throw err                                
+                var checkUnique = new Promise((resolve) => {
+                    connection.query(query2, (err, results) => {
+                        if(err) throw err                        
+            
+                        if(results.length > 0){                            
+                            res.status(403).json({
+                                message: 'Email/Username sudah digunakan'
+                            })
+                        }else{
+                            resolve()
+                        }                        
                     })
-
-                    return
-                }
-
-                res.status(500).json({
-                    message: 'Failed creating user'
-                })            
-            })
-
-            connection.release()
-        })   
-    }    
+                })
+                
+                await checkUnique.then(() => {
+                    connection.query(query, [data], (err, results) => {
+                        if(err) throw err
+        
+                        if(results.affectedRows >= 1){
+                            const token = jwt.sign({
+                                email: data.email,
+                                username: data.username
+                            }, accessTokenSecret)
+        
+                            responseAuthSuccess(res, token, 'Register successfully', {
+                                email: data.email,
+                                username: data.username
+                            })                
+                        }else{
+                            res.status(500).json({
+                                message: 'Failed creating user'
+                            })
+                        }                        
+                    })   
+                })
+    
+                connection.release()
+            })               
+        }      
 }
 
 const login = (req, res) => {    
@@ -110,4 +110,3 @@ const login = (req, res) => {
 module.exports = {
     register, login
 }
-
