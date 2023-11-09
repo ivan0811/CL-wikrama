@@ -5,8 +5,13 @@ const {
     getBook,
     addBook,
     updateBook,
-    deleteBook
+    deleteBook,
+    search,
+    sortBy        
 } = require('../controllers/BookController')
+
+router.get('/search', search)
+router.get('/sort', sortBy)
 
 //route untuk menampilkan data
 router.route('/')
